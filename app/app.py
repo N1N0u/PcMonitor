@@ -11,7 +11,6 @@ from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 
-# ✅ Initialize Prometheus metrics exporter (FIX #1)
 metrics = PrometheusMetrics(app)
 metrics.info('app_info', 'Application info', version='1.0.0')
 
@@ -55,11 +54,11 @@ def run_stress(cmd: list[str], label: str):
         for line in proc.stdout:
             log(line.rstrip())
         proc.wait()
-        log(f"✅ {label} done (exit {proc.returncode}).")
+        log(f"{label} done (exit {proc.returncode}).")
     except FileNotFoundError as e:
-        log(f"❌ Command not found: {e}. Is stress-ng installed?")
+        log(f"Command not found: {e}. Is stress-ng installed?")
     except Exception as e:
-        log(f"❌ Error during {label}: {e}")
+        log(f"Error during {label}: {e}")
     finally:
         with lock:
             active_processes[:] = [p for p in active_processes if p.poll() is None]
@@ -67,7 +66,7 @@ def run_stress(cmd: list[str], label: str):
 
 
 def stop_all():
-    log("⛔ Stopping all stress processes...")
+    log("Stopping all stress processes...")
     with lock:
         for proc in active_processes:
             try:
@@ -78,7 +77,7 @@ def stop_all():
     # Also kill any lingering stress-ng
     subprocess.run(["pkill", "-f", "stress-ng"], capture_output=True)
     subprocess.run(["pkill", "-f", "gpu_burn"], capture_output=True)
-    log("✅ All stopped. System is idle.")
+    log("All stopped. System is idle.")
 
 
 # ─── ROUTES ───────────────────────────────────────────────────
@@ -137,35 +136,66 @@ def api_start():
 
 def _gpu_stress_thread():
     global stress_running
+
     with lock:
         stress_running = True
+
     log("🎮 Starting GPU stress...")
 
-    # Try PyTorch first
     try:
-        import importlib
-        torch = importlib.import_module("torch")
+        import torch
+
         if not torch.cuda.is_available():
-            log("❌ CUDA not available on this machine.")
-            with lock:
-                stress_running = False
+            log("❌ CUDA not available.")
             return
-        log(f"GPU: {torch.cuda.get_device_name(0)}")
-        a = torch.randn(4096, 4096, device="cuda")
-        b = torch.randn(4096, 4096, device="cuda")
-        end = time.time() + DURATION
-        while time.time() < end:
-            torch.mm(a, b)
+
+        device = torch.device("cuda:0")
+
+        gpu_name = torch.cuda.get_device_name(device)
+        total_mem = torch.cuda.get_device_properties(device).total_memory / 1e9
+
+        log(f"✅ GPU detected: {gpu_name}")
+        log(f"🧠 VRAM: {total_mem:.2f} GB")
+
+        # Large tensors
+        size = 8192
+
+        a = torch.randn(size, size, device=device)
+        b = torch.randn(size, size, device=device)
+
+        end_time = time.time() + DURATION
+        iterations = 0
+
+        while time.time() < end_time:
+            c = torch.mm(a, b)
+
+            # Extra load
+            c = torch.relu(c)
+
             torch.cuda.synchronize()
-        log("✅ GPU stress done.")
-    except ImportError:
-        # Fallback to gpu_burn
-        result = subprocess.run(["which", "gpu_burn"], capture_output=True)
-        if result.returncode == 0:
-            run_stress(["gpu_burn", str(DURATION)], "gpu_burn")
-        else:
-            log("❌ No GPU stress tool found. Install PyTorch or gpu_burn.")
+
+            iterations += 1
+
+            if iterations % 5 == 0:
+                allocated = torch.cuda.memory_allocated(device) / 1e9
+                reserved = torch.cuda.memory_reserved(device) / 1e9
+
+                log(
+                    f"🔥 Iteration {iterations} | "
+                    f"VRAM {allocated:.2f}/{reserved:.2f} GB"
+                )
+
+        log("✅ GPU stress completed successfully.")
+
+    except Exception as e:
+        log(f"❌ GPU stress error: {e}")
+
     finally:
+        try:
+            torch.cuda.empty_cache()
+        except:
+            pass
+
         with lock:
             stress_running = False
 
