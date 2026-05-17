@@ -1,0 +1,121 @@
+# ============================================================
+# Prometheus Configuration — prometheus.yml
+# ✅ FIXES APPLIED:
+# - Intel GPU Exporter port: 7000 → 8686
+# - MyApp configuration verified
+# ============================================================
+
+global:
+  # How often Prometheus scrapes targets by default
+  scrape_interval: 15s
+
+  # How often Prometheus evaluates alert rules
+  evaluation_interval: 15s
+
+  # Labels added to every metric and alert (for multi-environment setups)
+  external_labels:
+    environment: 'demo'
+    region: 'local'
+
+# ============================================================
+# ALERTING — point Prometheus at Alertmanager
+# ============================================================
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      # Timeout for connecting to Alertmanager
+      timeout: 10s
+
+# ============================================================
+# RULE FILES — alert rules and recording rules
+# ============================================================
+rule_files:
+  - "alert.rules.yml"
+  # Uncomment to add recording rules:
+  # - "recording.rules.yml"
+
+# ============================================================
+# SCRAPE CONFIGS — what to monitor
+# ============================================================
+scrape_configs:
+
+  # --- Prometheus itself ---
+  # Prometheus exposes its own metrics at /metrics
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # --- Node Exporter ---
+  # System-level metrics: CPU, memory, disk, network
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    # Relabeling to add a friendly instance name
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'demo-host'
+
+  # --- Alertmanager ---
+  # Monitor the health of your Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # --- Sample Python App (Flask) ---
+  # Our instrumented Flask application
+  # ✅ FIXED: PrometheusMetrics now properly initialized
+  - job_name: 'myapp'
+    static_configs:
+      - targets: ['myapp:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    
+  # --- Intel GPU Exporter ---
+  # ✅ FIXED: Port changed from 7000 to 8686
+  - job_name: 'intel-gpu-exporter'
+    static_configs:
+      - targets: ['intel-gpu-exporter:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # --- Grafana (optional) ---
+  # Monitor Grafana's own performance
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    
+  # --- NVIDIA DCGM Exporter ---
+  # Monitor GPU's own performance
+  - job_name: 'dcgm-exporter'
+    static_configs:
+      - targets: ['dcgm-exporter:9400']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    metric_relabel_configs:
+      - regex: 'Hostname'
+        action: labeldrop
+
+# ============================================================
+# EXAMPLE: Kubernetes Service Discovery (for real clusters)
+# Uncomment when running in Kubernetes
+# ============================================================
+# - job_name: 'kubernetes-pods'
+#   kubernetes_sd_configs:
+#     - role: pod
+#   relabel_configs:
+#     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+#       action: keep
+#       regex: true
+#     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+#       action: replace
+#       target_label: __metrics_path__
+#       regex: (.+)

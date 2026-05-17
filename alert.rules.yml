@@ -1,0 +1,235 @@
+# ============================================================
+# Alert Rules + Recording Rules — alert.rules.yml
+# Prometheus Crash Course Demo
+# ============================================================
+
+groups:
+
+  # =========================================================
+  # GROUP 0: Recording Rules (Pre-computed Metrics)
+  # =========================================================
+  - name: recording_rules
+    rules:
+
+      # Pre-compute CPU usage percentage per instance
+      - record: instance:cpu_usage_percent
+        expr: >
+          100 - (
+            avg by(instance) (
+              irate(node_cpu_seconds_total{mode="idle"}[5m])
+            ) * 100
+          )
+
+      # Pre-compute memory usage percentage per instance
+      - record: instance:memory_usage_percent
+        expr: >
+          100 - (
+            node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100
+          )
+
+      # Pre-compute disk usage percentage for root mount
+      - record: instance:disk_usage_percent
+        expr: >
+          100 - (
+            node_filesystem_avail_bytes{mountpoint="/", fstype!="tmpfs"}
+            / node_filesystem_size_bytes{mountpoint="/", fstype!="tmpfs"} * 100
+          )
+
+      # Pre-compute application error rate
+      - record: app:error_rate_percent
+        expr: >
+          (
+            rate(app_errors_total[5m])
+            / rate(app_requests_total[5m])
+          ) * 100
+
+      # Pre-compute p95 latency
+      - record: app:request_latency_p95
+        expr: >
+          histogram_quantile(0.95,
+            rate(app_request_latency_seconds_bucket[5m])
+          )
+
+      # Pre-compute request rate
+      - record: app:request_rate_per_second
+        expr: rate(app_requests_total[5m])
+
+  # =========================================================
+  # GROUP 1: Infrastructure Alerts (uses recording rules)
+  # =========================================================
+  - name: infrastructure
+    rules:
+
+      # Alert when any monitored instance goes DOWN
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Instance {{ $labels.instance }} is DOWN"
+          description: >
+            {{ $labels.instance }} of job {{ $labels.job }} has been
+            unreachable for more than 1 minute.
+          runbook: "https://wiki.example.com/runbooks/instance-down"
+
+      # Alert on HIGH CPU usage (using recording rule)
+      - alert: HighCpuUsage
+        expr: instance:cpu_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: >
+            CPU usage is {{ $value | printf "%.1f" }}% on {{ $labels.instance }},
+            sustained for more than 5 minutes.
+
+      # Alert on CRITICAL CPU (using recording rule)
+      - alert: CriticalCpuUsage
+        expr: instance:cpu_usage_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "CRITICAL CPU usage on {{ $labels.instance }}"
+          description: >
+            CPU usage is {{ $value | printf "%.1f" }}% on {{ $labels.instance }}.
+            Immediate action required!
+
+      # Alert on LOW MEMORY (using recording rule)
+      - alert: LowMemory
+        expr: instance:memory_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "Low memory on {{ $labels.instance }}"
+          description: >
+            Only {{ $value | printf "%.1f" }}% memory available on
+            {{ $labels.instance }}. Consider adding more RAM or investigating
+            memory leaks.
+
+      # Alert on LOW DISK SPACE (using recording rule)
+      - alert: LowDiskSpace
+        expr: instance:disk_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: >
+            Only {{ $value | printf "%.1f" }}% disk space available on /
+            for {{ $labels.instance }}.
+
+      # Alert on CRITICALLY LOW DISK SPACE (using recording rule)
+      - alert: CriticalDiskSpace
+        expr: instance:disk_usage_percent > 95
+        for: 1m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "CRITICAL disk space on {{ $labels.instance }}"
+          description: >
+            Only {{ $value | printf "%.1f" }}% disk space remaining on /
+            for {{ $labels.instance }}. URGENT: clean up or expand storage!
+
+  # =========================================================
+  # GROUP 2: Application Alerts (uses recording rules)
+  # =========================================================
+  - name: application
+    rules:
+
+      # Alert on HIGH ERROR RATE (using recording rule)
+      - alert: HighErrorRate
+        expr: app:error_rate_percent > 5
+        for: 2m
+        labels:
+          severity: critical
+          team: backend
+        annotations:
+          summary: "High error rate on {{ $labels.instance }}"
+          description: >
+            Error rate is {{ $value | printf "%.1f" }}% on {{ $labels.instance }}.
+            Threshold is 5%. Check application logs for root cause.
+
+      # Alert on HIGH REQUEST LATENCY (using recording rule)
+      - alert: HighP95Latency
+        expr: app:request_latency_p95 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "High p95 latency detected"
+          description: >
+            p95 request latency is {{ $value | printf "%.3f" }}s
+            (threshold: 500ms). Check for slow database queries or
+            resource contention.
+
+      # Alert when request rate drops significantly (using recording rule)
+      - alert: LowRequestRate
+        expr: app:request_rate_per_second < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: backend
+        annotations:
+          summary: "Very low request rate on {{ $labels.instance }}"
+          description: >
+            Request rate dropped to {{ $value | printf "%.3f" }} req/s.
+            This might indicate load balancer or upstream issues.
+
+  # =========================================================
+  # GROUP 3: Prometheus Self-Monitoring
+  # =========================================================
+  - name: prometheus-self
+    rules:
+
+      # Alert if Prometheus config reload fails
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Prometheus config reload failed"
+          description: >
+            Prometheus on {{ $labels.instance }} failed to reload its
+            configuration. Check the config file for syntax errors.
+            Run: curl -X POST http://localhost:9090/-/reload
+
+      # Alert if Prometheus TSDB has too many errors
+      - alert: PrometheusTsdbErrors
+        expr: increase(prometheus_tsdb_head_series_failed_total[1h]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "Prometheus TSDB errors detected"
+          description: >
+            Prometheus is experiencing TSDB errors. This may indicate
+            storage issues or corrupt data.
+
+      # Alert if scrape duration is too high
+      - alert: SlowScrape
+        expr: >
+          prometheus_target_scrape_pool_exceeded_label_limits_total > 0
+          OR max by(job) (prometheus_target_scrape_duration_seconds) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: ops
+        annotations:
+          summary: "Slow Prometheus scrape detected for {{ $labels.job }}"
+          description: >
+            One or more scrape targets are responding slowly or exceeding
+            label limits. This may cause gaps in metrics.
