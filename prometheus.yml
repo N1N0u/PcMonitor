@@ -1,8 +1,5 @@
 # ============================================================
 # Prometheus Configuration — prometheus.yml
-# ✅ FIXES APPLIED:
-# - Intel GPU Exporter port: 7000 → 8686
-# - MyApp configuration verified
 # ============================================================
 
 global:
@@ -70,7 +67,6 @@ scrape_configs:
 
   # --- Sample Python App (Flask) ---
   # Our instrumented Flask application
-  # ✅ FIXED: PrometheusMetrics now properly initialized
   - job_name: 'myapp'
     static_configs:
       - targets: ['myapp:5000']
@@ -78,7 +74,6 @@ scrape_configs:
     scrape_interval: 15s
     
   # --- Intel GPU Exporter ---
-  # ✅ FIXED: Port changed from 7000 to 8686
   - job_name: 'intel-gpu-exporter'
     static_configs:
       - targets: ['intel-gpu-exporter:8080']

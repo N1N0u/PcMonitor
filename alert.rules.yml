@@ -1,6 +1,5 @@
 # ============================================================
 # Alert Rules + Recording Rules — alert.rules.yml
-# Prometheus Crash Course Demo
 # ============================================================
 
 groups:

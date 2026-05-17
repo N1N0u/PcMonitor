@@ -1,6 +1,5 @@
 # ============================================================
 # Alertmanager Configuration — alertmanager.yml
-# Prometheus Crash Course Demo
 # ============================================================
 # Replace SLACK_WEBHOOK_URL with your real webhook URL from:
 # https://api.slack.com/apps -> Incoming Webhooks
