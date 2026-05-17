@@ -56,6 +56,19 @@ groups:
   # =========================================================
   # GROUP 1: Infrastructure Alerts (uses recording rules)
   # =========================================================
+  - name: test-alerts
+    rules:
+      - alert: TestEmailAlert
+        expr: vector(1)
+        for: 10s
+        labels:
+          severity: critical
+          team: ops
+        annotations:
+          summary: "Test email alert is firing"
+          description: "This is a test alert from Prometheus Alertmanager email integration."
+          runbook: "https://example.com/runbook"
+          
   - name: infrastructure
     rules:
 
