@@ -1,3 +1,10 @@
+version: '3.8'
+
+# ============================================================
+# FULL MONITORING STACK
+# Prometheus + Grafana + Alertmanager + Exporters
+# ============================================================
+
 services:
 
   # ============================================================
@@ -21,7 +28,7 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./alert.rules.yml:/etc/prometheus/alert.rules.yml
-      - prometheus_data:/prometheus
+      - ./data/prometheus:/prometheus
 
     depends_on:
       - node-exporter
@@ -50,7 +57,7 @@ services:
 
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
-      - alertmanager_data:/alertmanager
+      - ./data/alertmanager:/alertmanager
 
     networks:
       - monitoring
@@ -147,7 +154,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
 
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./data/grafana:/var/lib/grafana
 
     depends_on:
       - prometheus
@@ -183,17 +190,8 @@ services:
       - monitoring
 
 # ============================================================
-# VOLUMES
-# ============================================================
-volumes:
-  prometheus_data:
-  grafana_data:
-  alertmanager_data:
-
-# ============================================================
 # NETWORK
 # ============================================================
 networks:
   monitoring:
     driver: bridge
-

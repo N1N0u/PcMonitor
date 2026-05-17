@@ -1,115 +1,296 @@
 # ============================================================
-# Alertmanager Configuration — Email Only 
+# ALERTMANAGER CONFIGURATION
+# Sends alerts from Prometheus to Email
 # ============================================================
 
 global:
+
+  # How long Alertmanager waits before considering
+  # an alert as resolved if no updates are received
   resolve_timeout: 5m
 
- 
+  # ------------------------------------------------------------
+  # GMAIL SMTP SETTINGS
+  # ------------------------------------------------------------
+
+  # Gmail SMTP server + port
   smtp_smarthost: 'smtp.gmail.com:587'
-  smtp_from: 'youremail@gmail.com'
-  smtp_auth_username: 'youremail@gmail.com'
-  smtp_auth_password: 'xxxx xxxx xxxx xxxx'  
+
+  # Gmail address that sends alerts
+  smtp_from: 'aliat.atef@gmail.com'
+
+  # Gmail login username
+  smtp_auth_username: 'aliat.atef@gmail.com'
+
+  # Gmail APP PASSWORD
+  #
+  # IMPORTANT:
+  # This is NOT your normal Gmail password.
+  #
+  # You must generate a Google App Password.
+  #
+  # Steps:
+  # 1. Go to:
+  #    https://myaccount.google.com/security
+  #
+  # 2. Enable:
+  #    - 2-Step Verification
+  #
+  # 3. Then open:
+  #    https://myaccount.google.com/apppasswords
+  #
+  # 4. Select:
+  #    App -> Mail
+  #    Device -> Other
+  #
+  # 5. Google generates a password like:
+  #    abcd efgh ijkl mnop
+  #
+  # 6. Paste it below
+  #
+  smtp_auth_password: 'wbvp vkwq cizp xyrl'
+
+  # Use secure TLS encryption
   smtp_require_tls: true
 
+
 # ============================================================
-# ROUTE —
+# ROUTING RULES
+# Controls WHICH receiver gets alerts
 # ============================================================
+
 route:
+
+  # Group alerts by these labels
   group_by: ['alertname', 'severity', 'job']
+
+  # Wait before sending first notification
   group_wait: 30s
+
+  # Wait before sending updates for same group
   group_interval: 5m
+
+  # Repeat same alert every 4 hours
   repeat_interval: 4h
+
+  # Default receiver
   receiver: 'email-default'
 
   routes:
-    # Critical 
+
+    # --------------------------------------------------------
+    # CRITICAL ALERTS
+    # --------------------------------------------------------
     - match:
         severity: critical
+
+      # Send critical alerts here
       receiver: 'email-critical'
+
+      # Faster notification for critical alerts
       group_wait: 10s
+
+      # Repeat every hour
       repeat_interval: 1h
 
-    # Warning
+
+    # --------------------------------------------------------
+    # WARNING ALERTS
+    # --------------------------------------------------------
     - match:
         severity: warning
+
+      # Send warning alerts here
       receiver: 'email-warning'
+
+      # Wait longer for warnings
       group_wait: 1m
+
+      # Repeat every 6 hours
       repeat_interval: 6h
 
+
 # ============================================================
-# RECEIVERS 
+# RECEIVERS
+# Defines HOW alerts are sent
 # ============================================================
+
 receivers:
 
-
+  # ==========================================================
+  # DEFAULT EMAIL RECEIVER
+  # ==========================================================
   - name: 'email-default'
+
     email_configs:
-      - to: 'youremail@gmail.com'
+      - to: 'aliat.atef@gmail.com'
+
+        # Send email again when alert resolves
         send_resolved: true
+
+        # Email subject
         headers:
           Subject: '[ALERT] {{ .GroupLabels.alertname }}'
+
+        # Email body (HTML format)
         html: |
           <h3>🔔 Alert: {{ .GroupLabels.alertname }}</h3>
+
           <p><strong>Status:</strong> {{ .Status }}</p>
+
           <p><strong>Severity:</strong> {{ .CommonLabels.severity }}</p>
+
           <hr>
+
           {{ range .Alerts }}
+
           <p>
             <strong>Instance:</strong> {{ .Labels.instance }}<br>
+
             <strong>Summary:</strong> {{ .Annotations.summary }}<br>
+
             <strong>Description:</strong> {{ .Annotations.description }}<br>
-            <strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+
+            <strong>Started:</strong>
+            {{ .StartsAt.Format "2006-01-02 15:04:05" }}
           </p>
+
           <hr>
+
           {{ end }}
 
-  # Critical
+
+  # ==========================================================
+  # CRITICAL ALERT EMAIL
+  # ==========================================================
   - name: 'email-critical'
+
     email_configs:
-      - to: 'youremail@gmail.com'
+      - to: 'aliat.atef@gmail.com'
+
         send_resolved: true
+
         headers:
           Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+
         html: |
-          <h2 style="color: #dc3545;">🚨 CRITICAL ALERT</h2>
-          <p><strong>Alert:</strong> {{ .GroupLabels.alertname }}</p>
-          <p><strong>Status:</strong> {{ .Status }}</p>
+          <h2 style="color: #dc3545;">
+            🚨 CRITICAL ALERT
+          </h2>
+
+          <p>
+            <strong>Alert:</strong>
+            {{ .GroupLabels.alertname }}
+          </p>
+
+          <p>
+            <strong>Status:</strong>
+            {{ .Status }}
+          </p>
+
           <hr style="border: 2px solid #dc3545;">
+
           {{ range .Alerts }}
-          <div style="background: #f8d7da; padding: 10px; margin: 10px 0; border-left: 5px solid #dc3545;">
-            <p><strong>Instance:</strong> {{ .Labels.instance }}</p>
-            <p><strong>Summary:</strong> {{ .Annotations.summary }}</p>
-            <p><strong>Description:</strong> {{ .Annotations.description }}</p>
-            <p><strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05" }}</p>
-            {{ if .Annotations.runbook }}<p><strong>Runbook:</strong> {{ .Annotations.runbook }}</p>{{ end }}
+
+          <div style="
+            background: #f8d7da;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 5px solid #dc3545;
+          ">
+
+            <p>
+              <strong>Instance:</strong>
+              {{ .Labels.instance }}
+            </p>
+
+            <p>
+              <strong>Summary:</strong>
+              {{ .Annotations.summary }}
+            </p>
+
+            <p>
+              <strong>Description:</strong>
+              {{ .Annotations.description }}
+            </p>
+
+            <p>
+              <strong>Started:</strong>
+              {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+            </p>
+
+            {{ if .Annotations.runbook }}
+
+            <p>
+              <strong>Runbook:</strong>
+              {{ .Annotations.runbook }}
+            </p>
+
+            {{ end }}
+
           </div>
+
           {{ end }}
 
-  # Warning 
+
+  # ==========================================================
+  # WARNING ALERT EMAIL
+  # ==========================================================
   - name: 'email-warning'
+
     email_configs:
-      - to: 'youremail@gmail.com'
+      - to: 'aliat.atef@gmail.com'
+
         send_resolved: true
+
         headers:
           Subject: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
+
         html: |
-          <h3 style="color: #ffc107;">⚠️ Warning Alert</h3>
+          <h3 style="color: #ffc107;">
+            ⚠️ Warning Alert
+          </h3>
+
           {{ range .Alerts }}
+
           <p>
-            <strong>Instance:</strong> {{ .Labels.instance }}<br>
-            <strong>Summary:</strong> {{ .Annotations.summary }}<br>
-            <strong>Started:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+            <strong>Instance:</strong>
+            {{ .Labels.instance }}<br>
+
+            <strong>Summary:</strong>
+            {{ .Annotations.summary }}<br>
+
+            <strong>Started:</strong>
+            {{ .StartsAt.Format "2006-01-02 15:04:05" }}
           </p>
+
           <hr>
+
           {{ end }}
+
 
 # ============================================================
 # INHIBIT RULES
+# Prevent duplicate alerts
 # ============================================================
+
 inhibit_rules:
+
+  # If a CRITICAL alert exists,
+  # suppress WARNING alerts with same:
+  # - alertname
+  # - instance
+  #
+  # Example:
+  # If CPU usage is 95% (critical),
+  # don't also send CPU warning alert.
+  #
   - source_match:
       severity: critical
+
     target_match:
       severity: warning
-    equal: ['alertname', 'instance']
+
+    equal:
+      - 'alertname'
+      - 'instance'
