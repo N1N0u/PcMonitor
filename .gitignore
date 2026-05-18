@@ -3,3 +3,6 @@ README.md
 alertmanager (email).yml
 alertmanager.yml
 alertmanager.yml
+data/grafana/
+data/prometheus/
+data/alertmanager/
