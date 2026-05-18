@@ -128,7 +128,7 @@ groups:
 
       # Alert on LOW DISK SPACE (using recording rule)
       - alert: LowDiskSpace
-        expr: instance:disk_usage_percent > 80
+        expr: instance:disk_usage_percent > 90
         for: 5m
         labels:
           severity: warning
