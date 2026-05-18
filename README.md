@@ -6,7 +6,6 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-F2CC0C?style=for-the-badge&logo=grafana)](https://grafana.com/)
 [![GPU Monitoring](https://img.shields.io/badge/GPU%20Monitoring-NVIDIA%20%26%20Intel-76B900?style=for-the-badge)](https://www.nvidia.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 A production-ready **observability stack** with real-time infrastructure monitoring, advanced alerting, GPU telemetry, and beautiful dashboards.
 
