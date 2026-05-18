@@ -1,188 +1,213 @@
 # 📊 Prometheus-Grafana Monitoring Stack
 
-A production-style monitoring and alerting platform built with Prometheus, Grafana, Alertmanager, Node Exporter, Intel GPU Exporter, NVIDIA DCGM Exporter, and a custom Flask application.
+<div align="center">
+
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-F2CC0C?style=for-the-badge&logo=grafana)](https://grafana.com/)
+[![GPU Monitoring](https://img.shields.io/badge/GPU%20Monitoring-NVIDIA%20%26%20Intel-76B900?style=for-the-badge)](https://www.nvidia.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+
+A production-ready **observability stack** with real-time infrastructure monitoring, advanced alerting, GPU telemetry, and beautiful dashboards.
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Dashboards](#-dashboards) • [Troubleshooting](#-troubleshooting)
+
+</div>
 
 ---
 
-# 📌 Overview
+## 📌 What's Included?
 
-This project provides a complete observability stack using Docker Compose.
+This complete monitoring solution provides:
 
-The environment includes:
-
-- 📈 Metrics collection with Prometheus
-- 📊 Visualization dashboards with Grafana
-- 🚨 Centralized alerting with Alertmanager
-- 🖥️ Host monitoring with Node Exporter
-- 🎮 Intel GPU monitoring
-- ⚡ NVIDIA GPU monitoring
-- 🧪 Custom Flask metrics application
-- 🔔 Slack notification integration
-- 🐳 Fully containerized deployment
-
-Designed for real-world infrastructure monitoring and production-style observability environments.
+- 📈 **Prometheus** - Metrics collection & time-series database
+- 📊 **Grafana** - Production-grade visualization dashboards
+- 🚨 **Alertmanager** - Intelligent alert routing & Slack notifications
+- 🖥️ **Node Exporter** - System metrics (CPU, RAM, disk, network)
+- 🎮 **Intel GPU Exporter** - Intel GPU telemetry
+- ⚡ **NVIDIA DCGM Exporter** - NVIDIA GPU monitoring
+- 🧪 **Custom Flask App** - Application metrics & stress testing
+- 🔔 **Slack Integration** - Real-time alert notifications
+- 🐳 **Docker Compose** - One-command containerized deployment
 
 ---
 
-# 🚀 Features
+## 🚀 Features
 
-| Feature | Description |
-|---|---|
-| 📈 Real-Time Monitoring | Live infrastructure & application metrics |
-| 🚨 Advanced Alerting | Alertmanager with routing & inhibition |
-| 📊 Grafana Dashboards | Full visualization platform |
-| 🖥️ Node Exporter | CPU, RAM, disk & network monitoring |
-| 🎮 Intel GPU Monitoring | Intel GPU metrics via exporter |
-| ⚡ NVIDIA GPU Monitoring | DCGM exporter for NVIDIA GPUs |
-| 🧠 Recording Rules | Precomputed Prometheus metrics |
-| 🔔 Slack Notifications | Real-time alert delivery |
-| 🐳 Dockerized Stack | One-command deployment |
-| 📦 Persistent Storage | Volumes preserve monitoring data |
+| Feature | Status | Description |
+|---|---|---|
+| 📈 Real-Time Monitoring | ✅ | Live infrastructure & application metrics with 15s scrape intervals |
+| 🎮 GPU Monitoring | ✅ | Full NVIDIA & Intel GPU telemetry (utilization, temperature, power) |
+| 🚨 Smart Alerting | ✅ | Alertmanager with routing rules, inhibition, and Slack integration |
+| 📊 Grafana Dashboards | ✅ | Pre-built dashboards for CPU, RAM, GPUs, containers & more |
+| 🧠 Recording Rules | ✅ | Precomputed metrics for optimized query performance |
+| 🔔 Multi-Channel Alerts | ✅ | Slack notifications with routing based on severity |
+| 💾 Persistent Storage | ✅ | Docker volumes preserve all monitoring data across restarts |
+| 🐳 Fully Containerized | ✅ | All components run in isolated containers with Docker Compose |
+| 🔐 Production Ready | ✅ | Security best practices, resource limits, health checks |
 
 ---
 
-# 🏗️ Architecture
+## 📐 Architecture
 
-```text
-┌──────────────────────────────────────────────────────┐
-│                    Monitoring Stack                  │
-│                                                      │
-│  ┌──────────────┐        scrape       ┌───────────┐ │
-│  │   My Flask   │◄───────────────────│           │ │
-│  │     App      │                    │           │ │
-│  └──────────────┘                    │           │ │
-│                                      │           │ │
-│  ┌──────────────┐        scrape      │           │ │
-│  │ NodeExporter │◄───────────────────│           │ │
-│  └──────────────┘                    │           │ │
-│                                      │PROMETHEUS│ │
-│  ┌──────────────┐        scrape      │   :9090  │ │
-│  │ Intel GPU    │◄───────────────────│           │ │
-│  │  Exporter    │                    │           │ │
-│  └──────────────┘                    │           │ │
-│                                      │           │ │
-│  ┌──────────────┐        scrape      │           │ │
-│  │ DCGM Exporter│◄───────────────────│           │ │
-│  │ NVIDIA GPUs  │                    └─────┬─────┘ │
-│  └──────────────┘                          │       │
-│                                            ▼       │
-│                                   ┌─────────────┐ │
-│                                   │Alertmanager│ │
-│                                   │   :9093    │ │
-│                                   └─────┬─────┘ │
-│                                         ▼       │
-│                                  Slack Alerts   │
-│                                                 │
-│                 query                           │
-│  ┌──────────────┐◄─────────────────────────────┐│
-│  │   Grafana    │                              ││
-│  │    :3000     │                              ││
-│  └──────────────┘                              ││
-└──────────────────────────────────────────────────────┘
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Monitoring Stack                         │
+│                                                             │
+│  ┌──────────────┐                  ┌───────────────────┐  │
+│  │ My Flask App │──scrape────────┐ │                   │  │
+│  │  (5000)      │               │ │                   │  │
+│  └──────────────┘               │ │  PROMETHEUS       │  │
+│                                 │ │  Time-Series DB   │  │
+│  ┌──────────────┐               │ │  (9090)           │  │
+│  │ Node Exporter│──scrape────────│                   │  │
+│  │  (9100)      │               │ │  • CPU, RAM, Disk │  │
+│  └──────────────┘               │ │  • Network        │  │
+│                                 │ │  • Containers     │  │
+│  ┌──────────────┐               │ │  • Apps           │  │
+│  │ Intel GPU    │──scrape────────│                   │  │
+│  │ Exporter     │               │ └─────────┬─────────┘  │
+│  │  (8686)      │               │           │            │
+│  └──────────────┘               │           ▼            │
+│                                 │  ┌──────────────────┐  │
+│  ┌──────────────┐               │  │  Alertmanager    │  │
+│  │ NVIDIA DCGM  │──scrape────────→  │  (9093)          │  │
+│  │ Exporter     │                  │  • Alert Routing │  │
+│  │  (9400)      │                  │  • Inhibition    │  │
+│  └──────────────┘                  └────────┬─────────┘  │
+│                                             │            │
+│                                             ▼            │
+│                                        Slack 🔔          │
+│                                                         │
+│     ┌────────────────────────────────────────────┐     │
+│     │           GRAFANA DASHBOARDS               │     │
+│     │            (3000)                          │     │
+│     │  • System Overview                         │     │
+│     │  • CPU & Memory Analysis                   │     │
+│     │  • GPU Utilization & Performance           │     │
+│     │  • Container Monitoring                    │     │
+│     │  • Application Metrics                     │     │
+│     └────────────────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-# 📂 Project Structure
+## ⚡ Quick Start
 
-```text
-monitoring-stack/
-│
-├── docker-compose.yml
-├── prometheus.yml
-├── alertmanager.yml
-├── alert.rules.yml
-│
-├── app/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app.py
-
-```
-
----
-
-# ⚡ Quick Start
-
-## 1️⃣ Clone Repository
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/N1N0u/PcMonitor.git
 cd PcMonitor
 ```
 
-## 2️⃣ Start the Entire Stack
+### 2️⃣ Start the Stack
 
 ```bash
-docker compose up -d
+docker-compose up -d
 ```
 
-## 3️⃣ Verify Containers
+### 3️⃣ Verify Deployment
 
 ```bash
-docker compose ps
+docker-compose ps
 ```
 
-Wait around 30 seconds for all services to initialize.
-
----
-
-# 🌐 Service URLs
-
-| Service | URL |
-|---|---|
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000 |
-| Alertmanager | http://localhost:9093 |
-| Node Exporter | http://localhost:9100/metrics |
-| Intel GPU Exporter | http://localhost:8686/metrics |
-| NVIDIA DCGM Exporter | http://localhost:9400/metrics |
-| Flask App | http://localhost:5000 |
-
----
-
-# 🔑 Grafana Credentials
-
-```text
-Username: admin
-Password: admin123
+Expected output:
+```
+CONTAINER ID   IMAGE                          STATUS
+...            grafana/grafana-enterprise     Up
+...            prom/prometheus                Up
+...            prom/alertmanager              Up
+...            prom/node-exporter             Up
+...            ghcr.io/onedr0p/intel-gpu     Up
+...            nvidia/dcgm-exporter           Up
+...            pcmonitor_myapp                Up
 ```
 
----
+### 4️⃣ Access Services
 
-# 🐳 Services Included
+| Service | URL | Credentials |
+|---|---|---|
+| **Grafana** | http://localhost:3000 | admin / admin123 |
+| **Prometheus** | http://localhost:9090 | — |
+| **Alertmanager** | http://localhost:9093 | — |
+| **Flask App** | http://localhost:5000 | — |
 
-| Service | Purpose |
-|---|---|
-| Prometheus | Metrics collection & TSDB |
-| Grafana | Visualization dashboards |
-| Alertmanager | Alert routing & notifications |
-| Node Exporter | System metrics |
-| Intel GPU Exporter | Intel GPU telemetry |
-| DCGM Exporter | NVIDIA GPU telemetry |
-| Flask App | Custom Stress CPU-GPU-RAM |
 
 ---
 
-# 📈 Prometheus Configuration Highlights
+## 📊 Dashboards
 
-## Scrape Targets
+### System Overview Dashboard
+Monitor overall system health with CPU, RAM, disk utilization:
 
-The stack automatically monitors:
+![CPU Dashboard](./screenshots/CPU.png)
 
-- Prometheus
-- Node Exporter
-- Alertmanager
-- Grafana
-- Flask Application
-- Intel GPU Exporter
-- NVIDIA DCGM Exporter
+### Memory Analysis
+memory usage, cache, and buffer metrics:
+
+![RAM Dashboard](./screenshots/RAM.png)
+
+### NVIDIA GPU Monitoring
+Real-time NVIDIA GPU metrics including utilization, temperature, power usage:
+
+![NVIDIA GPU Dashboard](./screenshots/Nvidia_GPU.png)
+
+### Intel GPU Monitoring
+Intel GPU frequency, power, and utilization tracking:
+
+![Intel GPU Dashboard](./screenshots/Intel_GPU.png)
+
+### Container Health
+Monitor Docker container performance and status:
+
+![Containers Dashboard](./screenshots/containers.png)
+
+### Stress Testing Tool
+Built-in stress test application with configurable CPU, RAM, and GPU load:
+
+![Stress App](./screenshots/Stress_App.png)
+
+### Alert Management
+View and manage alerts through Alertmanager:
+
+![Alert Dashboard](./screenshots/Alert.png)
 
 ---
 
-## Recording Rules
+## 🐳 Services & Ports
 
-Precomputed metrics include:
+| Service | Port | Purpose |
+|---|---|---|
+| **Grafana** | 3000 | Visualization & dashboards |
+| **Prometheus** | 9090 | Metrics collection & querying |
+| **Alertmanager** | 9093 | Alert routing & notifications |
+| **Node Exporter** | 9100 | System metrics |
+| **Intel GPU Exporter** | 8686 | Intel GPU telemetry |
+| **NVIDIA DCGM Exporter** | 9400 | NVIDIA GPU telemetry |
+| **Flask App** | 5000 | Custom application metrics |
+
+---
+
+## 📈 Key Metrics & Alerts
+
+### Infrastructure Alerts
+
+| Alert | Threshold | Severity |
+|---|---|---|
+| **HighCpuUsage** | > 85% | Warning |
+| **CriticalCpuUsage** | > 95% | Critical |
+| **HighMemoryUsage** | > 90% | Warning |
+| **CriticalMemoryUsage** | > 95% | Critical |
+| **LowDiskSpace** | > 80% | Warning |
+| **CriticalDiskSpace** | > 95% | Critical |
+| **InstanceDown** | Unavailable | Critical |
+
+### Precomputed Recording Rules
+
+Optimized metrics for faster queries:
 
 ```promql
 instance:cpu_usage_percent
@@ -193,206 +218,257 @@ app:request_latency_p95
 app:request_rate_per_second
 ```
 
-These optimize dashboard performance and reduce query complexity.
-
 ---
 
-# 🚨 Alerting System
+## 🔍 Useful PromQL Queries
 
-## Infrastructure Alerts
-
-| Alert | Trigger |
-|---|---|
-| InstanceDown | Service unavailable |
-| HighCpuUsage | CPU > 85% |
-| CriticalCpuUsage | CPU > 95% |
-| LowMemory | RAM usage critical |
-| LowDiskSpace | Disk > 80% |
-| CriticalDiskSpace | Disk > 95% |
-
----
-
-## Application Alerts
-
-| Alert | Trigger |
-|---|---|
-| HighErrorRate | Error rate > 5% |
-| HighP95Latency | Latency > 500ms |
-| LowRequestRate | Very low traffic |
-
----
-
-## Prometheus Self Monitoring
-
-The stack also monitors Prometheus itself:
-
-- Failed config reloads
-- TSDB issues
-- Slow scrape operations
-
----
-
-
-# 📊 Grafana Setup
-
-## Add Prometheus Data Source
-
-```text
-http://prometheus:9090
-```
-
----
-# 🧠 Useful PromQL Queries
-
-## CPU Usage %
-
+### CPU Usage Percentage
 ```promql
-100 - (
-  avg by(instance)(
-    irate(node_cpu_seconds_total{mode="idle"}[5m])
-  ) * 100
-)
+100 - (avg by(instance)(irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
 ```
 
-## Memory Usage %
-
+### Memory Usage Percentage
 ```promql
-100 - (
-  node_memory_MemAvailable_bytes
-  /
-  node_memory_MemTotal_bytes * 100
-)
+100 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100)
 ```
 
-## Disk Usage %
-
+### Disk Usage Percentage
 ```promql
-100 - (
-  node_filesystem_avail_bytes{mountpoint="/"}
-  /
-  node_filesystem_size_bytes{mountpoint="/"} * 100
-)
+100 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100)
 ```
 
-## Error Rate %
-
-```promql
-app:error_rate_percent
-```
-
-## p95 Request Latency
-
-```promql
-app:request_latency_p95
-```
-
-## Intel GPU Metrics
-
-```promql
-intel_gpu_power_watts
-```
-
-## NVIDIA GPU Metrics
-
+### NVIDIA GPU Utilization
 ```promql
 DCGM_FI_DEV_GPU_UTIL
 ```
 
----
-
-# 🛠️ Useful Commands
-
-## Start Stack
-
-```bash
-docker compose up -d
+### Intel GPU Power
+```promql
+intel_gpu_power_watts
 ```
 
-## View Logs
-
-```bash
-docker compose logs -f prometheus
-```
-
-## Restart Prometheus
-
-```bash
-docker compose restart prometheus
-```
-
-## Remove Everything
-
-```bash
-docker compose down -v
+### Error Rate
+```promql
+app:error_rate_percent
 ```
 
 ---
 
-# 🔍 Troubleshooting
+## 🛠️ Configuration
 
-## Check Containers
+### Prometheus Configuration
+Edit `prometheus.yml` to add/modify scrape targets:
 
-```bash
-docker compose ps
+```yaml
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+  
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
 ```
 
-## Verify Targets
+### Alert Rules
+Configure alerts in `alert.rules.yml`:
 
-Open:
-
-```text
-http://localhost:9090/targets
+```yaml
+groups:
+  - name: infrastructure
+    interval: 30s
+    rules:
+      - alert: HighCpuUsage
+        expr: instance:cpu_usage_percent > 85
+        for: 5m
+        annotations:
+          summary: "High CPU usage detected"
 ```
 
-All targets should show:
-
-```text
-UP
-```
+### Alertmanager Configuration
+Set up Email notifications in `alertmanager.yml`:
 
 ---
 
-## Intel GPU Exporter Not Working?
+## 🚀 Common Tasks
 
+### View Logs
 ```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f prometheus
+docker-compose logs -f grafana
+```
+
+### Restart Services
+```bash
+# Restart Prometheus
+docker-compose restart prometheus
+
+# Restart all
+docker-compose restart
+```
+
+### Stop the Stack
+```bash
+docker-compose down
+```
+
+### Remove Everything (including data)
+```bash
+docker-compose down -v
+```
+
+### Add a New Prometheus Target
+
+1. Edit `prometheus.yml`
+2. Add new scrape job:
+```yaml
+  - job_name: 'my-app'
+    static_configs:
+      - targets: ['my-app:8080']
+```
+3. Reload: `docker-compose restart prometheus`
+
+---
+
+## 🔍 Troubleshooting
+
+### All Containers Up But Dashboards Empty?
+
+1. **Check Prometheus targets:**
+   - Visit http://localhost:9090/targets
+   - All should show `UP` status
+
+2. **Check container logs:**
+   ```bash
+   docker-compose logs prometheus
+   docker-compose logs node-exporter
+   ```
+
+### GPU Exporter Not Working?
+
+**Intel GPU:**
+```bash
+# Check if Intel GPU drivers are installed
 ls /dev/dri
 ```
 
----
+**NVIDIA GPU:**
+```bash
+# Verify NVIDIA drivers
+nvidia-smi
 
-## NVIDIA GPU Exporter Not Working?
+# Check DCGM exporter logs
+docker-compose logs dcgm-exporter
+```
+
+### Prometheus Config Error?
 
 ```bash
-nvidia-smi
+# Validate config
+docker-compose logs prometheus | grep "config"
+
+# Common issues: YAML indentation, invalid job names
+```
+
+### Grafana Not Loading?
+
+```bash
+# Check Grafana health
+curl http://localhost:3000/api/health
+
+# Check data source connection
+docker-compose logs grafana | grep "datasource"
+```
+
+### Out of Disk Space?
+
+```bash
+# Check Docker volumes
+docker volume ls
+
+# Clean up old data
+docker-compose down -v
+docker-compose up -d
 ```
 
 ---
 
-# ⚡ Stack Capabilities
+## 📁 Project Structure
 
-| Capability | Status |
-|---|---|
-| Production-Oriented | ✅ |
-| GPU Monitoring | ✅ |
-| Alert Automation | ✅ |
-| Dockerized | ✅ |
-| Real-Time Metrics | ✅ |
-| Persistent Storage | ✅ |
+```
+PcMonitor/
+├── docker-compose.yml          # Service definitions
+├── prometheus.yml              # Prometheus configuration
+├── alertmanager.yml            # Alert routing & notifications
+├── alert.rules.yml             # Alert rule definitions
+│
+├── app/
+│   ├── Dockerfile             # Flask app container image
+│   ├── app.py                 # Custom metrics application
+│   └── requirements.txt        # Python dependencies
+│
+├── data/                        # Persistent volumes
+│   ├── prometheus/
+│   ├── grafana/
+│   └── alertmanager/
+│
+└── README.md                   # This file
+```
 
 ---
 
-# 👤 Author
+
+## 🤝 Contributing
+
+Contributions are welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+
+## 👤 Author
 
 **ALIAT Atef**
 
 ---
 
-# ⭐ Final Statement
+## ⭐ Skills Demonstrated
 
-This project demonstrates the ability to:
+This project showcases:
 
-- Build complete observability stacks
-- Configure advanced Prometheus setups
-- Design scalable alerting systems
-- Monitor infrastructure and GPUs
-- Deploy production-style monitoring environments
+- ✅ Complete observability stack architecture
+- ✅ Prometheus configuration & PromQL queries
+- ✅ Grafana dashboard design & customization
+- ✅ Multi-target GPU monitoring (NVIDIA & Intel)
+- ✅ Alert automation & intelligent routing
+- ✅ Docker & Docker Compose orchestration
+- ✅ Production-ready monitoring infrastructure
+- ✅ System metrics collection & analysis
+
+---
+
+## 📞 Support & Issues
+
+Found a bug?
+
+- 🐛 [Open an Issue](https://github.com/N1N0u/PcMonitor/issues)
+- ⭐ If helpful, please star the repository!
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the DevOps & SRE community**
+
+[⬆ back to top](#-prometheus-grafana-monitoring-stack)
+
+</div>
