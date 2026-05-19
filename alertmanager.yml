@@ -17,10 +17,10 @@ global:
   smtp_smarthost: 'smtp.gmail.com:587'
 
   # Gmail address that sends alerts
-  smtp_from: 'aliat.atef@gmail.com'
+  smtp_from: 'youremail@gmail.com'
 
   # Gmail login username
-  smtp_auth_username: 'aliat.atef@gmail.com'
+  smtp_auth_username: 'youremail@gmail.com'
 
   # Gmail APP PASSWORD
   #
@@ -48,7 +48,7 @@ global:
   #
   # 6. Paste it below
   #
-  smtp_auth_password: 'wbvp vkwq cizp xyrl'
+  smtp_auth_password: 'xxxx xxxx xxxx xxxx'
 
   # Use secure TLS encryption
   smtp_require_tls: true
@@ -123,7 +123,7 @@ receivers:
   - name: 'email-default'
 
     email_configs:
-      - to: 'aliat.atef@gmail.com'
+      - to: 'youremail@gmail.com'
 
         # Send email again when alert resolves
         send_resolved: true
@@ -166,7 +166,7 @@ receivers:
   - name: 'email-critical'
 
     email_configs:
-      - to: 'aliat.atef@gmail.com'
+      - to: 'youremail@gmail.com'
 
         send_resolved: true
 
@@ -239,7 +239,7 @@ receivers:
   - name: 'email-warning'
 
     email_configs:
-      - to: 'aliat.atef@gmail.com'
+      - to: 'youremail@gmail.com'
 
         send_resolved: true
 
