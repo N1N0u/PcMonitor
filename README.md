@@ -76,7 +76,7 @@ This complete monitoring solution provides:
 │  └──────────────┘                  └────────┬─────────┘  │
 │                                             │            │
 │                                             ▼            │
-│                                        Slack 🔔          │
+│                                        Gmail 🔔          │
 │                                                         │
 │     ┌────────────────────────────────────────────┐     │
 │     │           GRAFANA DASHBOARDS               │     │
