@@ -1,8 +1,9 @@
-version: '3.8'
-
 # ============================================================
 # FULL MONITORING STACK
 # Prometheus + Grafana + Alertmanager + Exporters
+# ============================================================
+# FIRST-TIME SETUP: Run ./setup.sh before `docker compose up`
+# It installs the NVIDIA Container Toolkit (required once per host).
 # ============================================================
 
 services:
@@ -15,6 +16,10 @@ services:
     container_name: prometheus
     restart: unless-stopped
 
+    # prom/prometheus runs as user "nobody" (65534:65534).
+    # Setting this here avoids having to chown the data dir manually.
+    user: "65534:65534"
+
     ports:
       - "9090:9090"
 
@@ -26,8 +31,8 @@ services:
       - '--web.enable-admin-api'
 
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
       - ./data/prometheus:/prometheus
 
     depends_on:
@@ -56,7 +61,7 @@ services:
       - '--storage.path=/alertmanager'
 
     volumes:
-      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - ./data/alertmanager:/alertmanager
 
     networks:
@@ -138,8 +143,8 @@ services:
       - monitoring
 
   # ============================================================
-# GRAFANA IMAGE RENDERER
-# ============================================================
+  # GRAFANA IMAGE RENDERER
+  # ============================================================
   renderer:
     image: grafana/grafana-image-renderer:latest
     container_name: grafana-renderer
@@ -155,13 +160,17 @@ services:
     networks:
       - monitoring
 
-# ============================================================
-# GRAFANA
-# ============================================================
+  # ============================================================
+  # GRAFANA
+  # ============================================================
   grafana:
     image: grafana/grafana-enterprise:latest
     container_name: grafana
     restart: unless-stopped
+
+    # Grafana runs as UID 472. Setting this here means the ./data/grafana
+    # volume is owned correctly without a manual chown after cloning.
+    user: "472:472"
 
     ports:
       - "3000:3000"
@@ -184,6 +193,7 @@ services:
 
     networks:
       - monitoring
+
   # ============================================================
   # STRESS TEST APP
   # ============================================================
