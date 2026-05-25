@@ -6,3 +6,4 @@ alertmanager.yml
 data/grafana/
 data/prometheus/
 data/alertmanager/
+alertmanager.yml
