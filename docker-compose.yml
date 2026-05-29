@@ -2,8 +2,21 @@
 # FULL MONITORING STACK
 # Prometheus + Grafana + Alertmanager + Exporters
 # ============================================================
-# FIRST-TIME SETUP: Run ./setup.sh before `docker compose up`
-# It installs the NVIDIA Container Toolkit (required once per host).
+# LONG-TERM PORTABLE VERSION
+#
+# Uses Docker named volumes instead of bind mounts for data.
+# This avoids:
+# - permission issues
+# - readonly database errors
+# - UID/GID mismatches
+# - manual chown fixes
+# - distro-specific filesystem issues
+#
+# FIRST-TIME SETUP:
+# Run ./setup.sh before:
+#
+#   docker compose up -d
+#
 # ============================================================
 
 services:
@@ -16,8 +29,7 @@ services:
     container_name: prometheus
     restart: unless-stopped
 
-    # prom/prometheus runs as user "nobody" (65534:65534).
-    # Setting this here avoids having to chown the data dir manually.
+    # Prometheus runs as nobody
     user: "65534:65534"
 
     ports:
@@ -31,16 +43,18 @@ services:
       - '--web.enable-admin-api'
 
     volumes:
+      # Config files remain bind-mounted (read-only)
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
-      - ./data/prometheus:/prometheus
+
+      # Persistent Docker-managed volume
+      - prometheus-data:/prometheus
 
     depends_on:
       - node-exporter
       - alertmanager
       - dcgm-exporter
       - intel-gpu-exporter
-      - myapp
 
     networks:
       - monitoring
@@ -61,8 +75,11 @@ services:
       - '--storage.path=/alertmanager'
 
     volumes:
+      # Config file
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ./data/alertmanager:/alertmanager
+
+      # Persistent Docker-managed volume
+      - alertmanager-data:/alertmanager
 
     networks:
       - monitoring
@@ -168,8 +185,7 @@ services:
     container_name: grafana
     restart: unless-stopped
 
-    # Grafana runs as UID 472. Setting this here means the ./data/grafana
-    # volume is owned correctly without a manual chown after cloning.
+    # Grafana internal UID
     user: "472:472"
 
     ports:
@@ -185,7 +201,8 @@ services:
       GF_RENDERING_RENDERER_TOKEN: renderer_token
 
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      # Persistent Docker-managed volume
+      - grafana-data:/var/lib/grafana
 
     depends_on:
       - prometheus
@@ -195,35 +212,44 @@ services:
       - monitoring
 
   # ============================================================
-  # STRESS TEST APP
+  # OPTIONAL STRESS TEST APP
   # ============================================================
-  myapp:
-    build: ./app
-    container_name: myapp
-    restart: unless-stopped
-
-    ports:
-      - "5000:5000"
-
-    environment:
-      PORT: 5000
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: compute,utility
-
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-
-    networks:
-      - monitoring
+  # myapp:
+  #   build: ./app
+  #   container_name: myapp
+  #   restart: unless-stopped
+  #
+  #   ports:
+  #     - "5000:5000"
+  #
+  #   environment:
+  #     PORT: 5000
+  #     NVIDIA_VISIBLE_DEVICES: all
+  #     NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  #
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: all
+  #             capabilities: [gpu]
+  #
+  #   networks:
+  #     - monitoring
 
 # ============================================================
-# NETWORK
+# NETWORKS
 # ============================================================
 networks:
   monitoring:
     driver: bridge
+
+# ============================================================
+# DOCKER MANAGED VOLUMES
+# ============================================================
+volumes:
+  prometheus-data:
+  alertmanager-data:
+  grafana-data:
+
